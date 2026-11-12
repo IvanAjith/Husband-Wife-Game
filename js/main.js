@@ -42,10 +42,11 @@
   function showMenu() {
     mode = 'menu';
     scene().reset(0);
+    const list = G.scenarios.map((sc, i) => `${i + 1}. ${sc.title}: ${sc.blurb}`).join('\n');
     showOverlay(
-      `${scene().title} 📱`,
-      scene().intro + '\n\nHold the LEFT MOUSE BUTTON (or SPACE) to use your phone and fill the bar.\nWhen your wife stirs, RELEASE to hide it, or she will catch you!',
-      [['Start', () => { lvIdx = 0; startLevel(); }]]
+      "Don't Get Caught 📱",
+      list + '\n\nHold the LEFT MOUSE BUTTON (or SPACE) to do your sneaky thing.\nWhen someone stirs, RELEASE it!',
+      G.scenarios.map((sc, i) => [`▶ ${sc.title}`, () => { scIdx = i; lvIdx = 0; startLevel(); }, i ? 'secondary' : ''])
     );
   }
 
@@ -53,11 +54,14 @@
     mode = 'result';
     const s = scene();
     if (s.result === 'lost') {
-      showOverlay('She saw you 💔', 'Your wife woke up and caught you on your phone…\nTime to apologise.', [['Try again', startLevel]]);
+      showOverlay(s.loseTitle, s.loseText, [['Try again', startLevel], ['Menu', showMenu, 'secondary']]);
     } else if (lvIdx < s.levels.length - 1) {
-      showOverlay('Sweet dreams ❤', 'You put the phone down and she snuggled up to you.\nBoth of you fall asleep happily.', [['Next level', () => { lvIdx++; startLevel(); }]]);
+      showOverlay(s.winTitle, s.winText, [['Next level', () => { lvIdx++; startLevel(); }]]);
     } else {
-      showOverlay('Best husband ever 🏆', 'You finished every level and she is still in your arms.\nMore scenarios coming soon!', [['Play again', () => { lvIdx = 0; startLevel(); }], ['Menu', showMenu, 'secondary']]);
+      const btns = [['Play again', () => { lvIdx = 0; startLevel(); }]];
+      if (scIdx < G.scenarios.length - 1) btns.unshift(['Next scenario', () => { scIdx++; lvIdx = 0; startLevel(); }]);
+      btns.push(['Menu', showMenu, 'secondary']);
+      showOverlay(s.endWinTitle, s.endWinText, btns);
     }
   }
 

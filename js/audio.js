@@ -90,13 +90,27 @@
         if (++n > 9) this.stopCry();
       }, 780);
     },
+    babyFuss() {
+      this.tone({ f: 620, f2: 520, dur: 0.45, type: 'triangle', vol: 0.09, vib: 10, vibRate: 9, lp: 1500 });
+      this.tone({ f: 700, f2: 560, dur: 0.4, type: 'sine', vol: 0.04, delay: 0.5, vib: 8, vibRate: 9 });
+    },
+    babyWail() {
+      this.tone({ f: 650, f2: 980, dur: 0.35, type: 'sawtooth', vol: 0.08, vib: 16, vibRate: 12, lp: 2200 });
+      this.tone({ f: 980, f2: 640, dur: 0.45, type: 'sawtooth', vol: 0.08, delay: 0.35, vib: 16, vibRate: 12, lp: 2200 });
+    },
+    startBabyCry() {
+      this.stopCry();
+      this.babyWail();
+      let n = 0;
+      this._cry = setInterval(() => { this.babyWail(); if (++n > 6) this.stopCry(); }, 900);
+    },
     stopCry() { if (this._cry) { clearInterval(this._cry); this._cry = null; } },
-    speak(text) {
+    speak(text, pitch = 0.6, queue = false) {
       if (this.muted || !('speechSynthesis' in window)) return;
       try {
-        speechSynthesis.cancel();
+        if (!queue) speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
-        u.pitch = 0.6; u.rate = 1.0; u.volume = 1;
+        u.pitch = pitch; u.rate = 1.0; u.volume = 1;
         speechSynthesis.speak(u);
       } catch (e) { /* ignore */ }
     },
