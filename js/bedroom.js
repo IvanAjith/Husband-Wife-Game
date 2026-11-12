@@ -107,7 +107,7 @@
     st.mode = 'look';
     G.Audio.stopAmbient();
     G.Audio.sting();
-    G.Audio.speak('Oh shit!');
+    G.Audio.ohShit('dad');
   }
 
   function win() {

@@ -94,7 +94,7 @@
     if (mode !== 'menu') s.update(dt, mode === 'playing' && holding); else s.update(dt, false);
     s.draw(ctx, now / 1000);
     if (mode === 'playing' && s.result) mode = 'ending';
-    if (mode === 'ending' && s.endT > (s.result === 'lost' ? 3.6 : 5.2)) showResult();
+    if (mode === 'ending' && s.endT > (s.result === 'lost' ? (s.loseDelay || 3.6) : (s.winDelay || 5.2))) showResult();
     requestAnimationFrame(frame);
   }
 

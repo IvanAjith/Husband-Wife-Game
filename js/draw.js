@@ -37,12 +37,15 @@
     eye(c, x + 17 + fx, y + 2, o.eyes, o.lx || 0, o.ly || 0);
     c.strokeStyle = o.hair; c.lineWidth = 3; c.lineCap = 'round';
     const bo = o.brow || 0; // negative = worried
-    c.beginPath(); c.moveTo(x - 27 + fx, y - 14 - bo); c.lineTo(x - 9 + fx, y - 16 + bo); c.moveTo(x + 9 + fx, y - 16 + bo); c.lineTo(x + 27 + fx, y - 14 - bo); c.stroke();
+    const rl = o.raiseL || 0, rrr = o.raiseR || 0; // raise a brow = confused look
+    c.beginPath(); c.moveTo(x - 27 + fx, y - 14 - bo - rl); c.lineTo(x - 9 + fx, y - 16 + bo - rl); c.moveTo(x + 9 + fx, y - 16 + bo - rrr); c.lineTo(x + 27 + fx, y - 14 - bo - rrr); c.stroke();
     c.strokeStyle = '#6b2f2f'; c.lineWidth = 2.6; c.fillStyle = '#4a1c1c';
     const mx = x + fx, my = y + 30;
     c.beginPath();
     if (o.mouth === 'o') { c.ellipse(mx, my + 2, 8, 11, 0, 0, 7); c.fill(); }
     else if (o.mouth === 'talk') { const th = 3 + Math.abs(Math.sin((o.t || 0) * 14 + (o.ph || 0))) * 7; c.ellipse(mx, my + 1, 6, th, 0, 0, 7); c.fill(); }
+    else if (o.mouth === 'wavy') { c.moveTo(mx - 10, my + 1); c.quadraticCurveTo(mx - 5, my - 5, mx, my + 1); c.quadraticCurveTo(mx + 5, my + 7, mx + 10, my + 1); c.stroke(); }
+    else if (o.mouth === 'wail') { const wh = 11 + Math.abs(Math.sin((o.t || 0) * 9)) * 8; c.ellipse(mx, my + 4, 11, wh, 0, 0, 7); c.fill(); }
     else if (o.mouth === 'smile') { c.arc(mx, my - 6, 11, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke(); }
     else if (o.mouth === 'frown') { c.arc(mx, my + 8, 9, 1.15 * Math.PI, 1.85 * Math.PI); c.stroke(); }
     else { c.moveTo(mx - 7, my); c.lineTo(mx + 7, my); c.stroke(); }

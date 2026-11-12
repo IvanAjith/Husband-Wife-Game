@@ -30,3 +30,7 @@ js/main.js        screens, input, game loop
 A scenario is an object pushed onto `Game.scenarios` with `title`, `intro`, `levels[]`,
 `reset(level)`, `update(dt, holding)`, `draw(ctx, t)`, and the fields `result`
 (`'won' | 'lost' | null`), `endT` and `progress`. Add a new file in `js/`, include it in `index.html`, and it appears in the menu. See `js/nursery.js` for an example.
+
+## Using your own voices (optional)
+The "Oh sh*t!" lines use the browser's built-in voices, which can sound robotic. For a real voice, record two short clips
+and save them as `audio/dad_ohshit.mp3` and `audio/mum_ohshit.mp3`. The game plays them automatically when they exist.

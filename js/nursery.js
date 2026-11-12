@@ -24,6 +24,7 @@
     blurb: 'Whisper with your wife without waking the baby.',
     levels: LEVELS,
     result: null, endT: 0, progress: 0, hintT: 0,
+    loseDelay: 9.5,
     loseTitle: 'Waaah! 👶💔',
     loseText: 'The baby woke up and saw you chatting.\nNow it is a long night…',
     winTitle: 'Shhh… all asleep ❤',
@@ -41,7 +42,7 @@
     particles = [];
     st = {
       t: 0, talk: 0, talkT: 0, mode: 'sleep', timer: rand(1.5, 2.5), willLook: true,
-      eyes: 0, wriggle: 0, wailStarted: false, hug: 0, heartT: 0, tearT: 0,
+      eyes: 0, wriggle: 0, wailStarted: false, mumSaid: false, hug: 0, heartT: 0, tearT: 0,
     };
     G.Audio.silenceAll();
   };
@@ -83,8 +84,7 @@
     S.result = 'lost'; S.endT = 0; st.mode = 'look';
     G.Audio.stopAmbient();
     G.Audio.sting();
-    G.Audio.speak('Oh shit!', 0.6);
-    G.Audio.speak('Oh shit!', 1.5, true);
+    G.Audio.ohShit('dad');
   }
 
   function win() {
@@ -99,12 +99,13 @@
     st.talk += (0 - st.talk) * Math.min(1, dt * 6);
     if (S.result === 'lost') {
       st.eyes = 1;
+      if (e > 0.45 && !st.mumSaid) { st.mumSaid = true; G.Audio.ohShit('mum'); }
       if (e > 0.9 && !st.wailStarted) { st.wailStarted = true; G.Audio.startBabyCry(); }
       if (e > 0.9) {
         st.tearT -= dt;
         if (st.tearT <= 0) {
           st.tearT = 0.07;
-          for (const dx of [-14, 14]) particles.push({ x: BABY_X + dx, y: BABY_Y + 6, vx: dx * 3 + rand(-15, 15), vy: rand(-70, -20), life: 1.1, type: 'tear' });
+          for (const dx of [-14, 14]) particles.push({ x: BABY_X + dx, y: BABY_Y - 16, vx: dx * 3 + rand(-15, 15), vy: rand(-70, -20), life: 1.1, type: 'tear' });
         }
       }
     } else {
@@ -179,7 +180,12 @@
     const wf = { skin: '#f1c6a4', hair: '#5c3329', long: true, eyes: 0, mouth: 'flat', t: st.t };
     const hf = { skin: '#dfae86', hair: '#1c1a1f', eyes: 0, mouth: 'flat', t: st.t };
     if (lost) {
-      for (const f of [wf, hf]) Object.assign(f, { eyes: 1.2, mouth: 'o', brow: 6 });
+      if (e < 2.3) for (const f of [wf, hf]) Object.assign(f, { eyes: 1.2, mouth: 'o', brow: 6 });
+      else { // confused: eyes dart around, one brow up, wobbly mouth
+        const glance = Math.sin(e * 2.6);
+        Object.assign(wf, { eyes: 1, lx: 4 * glance, ly: -1, mouth: 'wavy', raiseL: 6, raiseR: 0, turn: 0.3 });
+        Object.assign(hf, { eyes: 1, lx: -4 * glance, ly: -1, mouth: 'wavy', raiseL: 0, raiseR: 6, turn: -0.3 });
+      }
     } else if (won) {
       const wk = clamp(e / 1.5, 0, 1);
       for (const f of [wf, hf]) Object.assign(f, { eyes: 1 - wk, mouth: wk > 0.6 ? 'smile' : 'flat', blush: hugK > 0.3 });
@@ -202,9 +208,10 @@
     const shake = lost && e > 0.9 ? Math.sin(e * 34) * 2.5 : 0;
     const wig = Math.sin(t * 16) * 2.5 * st.wriggle;
     c.save();
-    c.translate(BABY_X + shake + wig, BABY_Y); c.scale(0.68, 0.68);
+    const up = lost ? clamp((e - 0.5) / 0.8, 0, 1) : 0; // baby sits up when she wakes
+    c.translate(BABY_X + shake + wig, BABY_Y - 22 * up); c.scale(0.68 + 0.14 * up, 0.68 + 0.14 * up);
     const bf = { skin: '#f7d3b4', hair: '#3a2420', eyes: st.eyes, lx: Math.sin(t * 3) * 2, ly: 1, mouth: 'flat', blush: true, t };
-    if (lost) { bf.eyes = e > 0.3 ? 1 : st.eyes; bf.mouth = e > 0.5 ? 'talk' : 'o'; bf.brow = -7; bf.ph = 0; }
+    if (lost) { bf.eyes = e > 0.3 ? 1 : st.eyes; bf.mouth = e > 0.9 ? 'wail' : 'o'; bf.brow = -7; }
     else if (won) { bf.eyes = 0; bf.mouth = hugK > 0.4 ? 'smile' : 'flat'; }
     else if (st.mode === 'stir') bf.mouth = 'frown';
     head(c, 0, 0, bf);
@@ -246,11 +253,21 @@
       else whisperBubble(c, HUS_X, HEAD_Y - 90, HUS_LINES[(lines >> 1) % HUS_LINES.length], a);
     }
     if (st.mode === 'stir' && !S.result) { c.fillStyle = 'rgba(255,200,230,.95)'; c.font = 'italic bold 24px system-ui'; c.fillText(st.willLook ? 'uhh…' : 'mm…', BABY_X - 24 + Math.sin(t * 9) * 3, BABY_Y - 62); }
-    if (lost && e > 0.25) bubble(c, HUS_X + 20, HEAD_Y - 112, 'Oh sh*t!', HUS_X - 5, HEAD_Y - 62);
-    if (lost && e > 0.4) bubble(c, WIFE_X - 20, HEAD_Y - 112, 'Oh sh*t!', WIFE_X + 5, HEAD_Y - 62);
+    if (lost && e > 0.25 && e < 2.4) bubble(c, HUS_X + 20, HEAD_Y - 112, 'Oh sh*t!', HUS_X - 5, HEAD_Y - 62);
+    if (lost && e > 0.4 && e < 2.4) bubble(c, WIFE_X - 20, HEAD_Y - 112, 'Oh sh*t!', WIFE_X + 5, HEAD_Y - 62);
+    if (lost && e > 2.6) {
+      const a = clamp((e - 2.6) / 0.4, 0, 1);
+      whisperBubble(c, WIFE_X, HEAD_Y - 100, 'Shh shh… why?!', a);
+      whisperBubble(c, HUS_X, HEAD_Y - 100, 'Now what?!', a);
+      c.fillStyle = '#ffe17a'; c.font = 'bold 40px system-ui';
+      c.globalAlpha = a;
+      c.fillText('?', WIFE_X + 60, HEAD_Y - 40 + Math.sin(e * 4) * 4);
+      c.fillText('?', HUS_X - 76, HEAD_Y - 40 + Math.sin(e * 4 + 1) * 4);
+      c.globalAlpha = 1;
+    }
     if (lost && e > 0.9) {
       c.fillStyle = '#ffd1e6'; c.font = `bold ${34 + Math.sin(e * 20) * 3}px system-ui`; c.textAlign = 'center';
-      c.fillText('WAAAH!', BABY_X, BABY_Y - 74 + Math.sin(e * 25) * 3); c.textAlign = 'left';
+      c.fillText('WAAAH!', BABY_X, BABY_Y - 104 + Math.sin(e * 25) * 3); c.textAlign = 'left';
     }
     if (won && hugK > 0.5) { zzz(c, WIFE_X - 10, HEAD_Y - 62, t); zzz(c, HUS_X - 5, HEAD_Y - 62, t + 0.5); zzz(c, BABY_X + 10, BABY_Y - 44, t + 0.25); }
     for (const p of particles) {
