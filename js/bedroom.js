@@ -17,7 +17,7 @@
 
   const S = {
     id: 'bedroom',
-    title: 'The Midnight Scroll',
+    title: 'Quick Scroll',
     time: '10:00 PM',
     intro: 'It is 10 PM. You are both in bed, about to sleep.\nYour wife is asleep… but your phone is calling you.',
     levels: LEVELS,

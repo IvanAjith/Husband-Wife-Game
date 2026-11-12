@@ -3,8 +3,8 @@
 A tiny browser game. It's 10 PM, you're in bed, your wife is asleep… and your phone is calling.
 
 ## Scenarios
-1. **The Midnight Scroll**: sneak your phone in bed while your wife sleeps.
-2. **Shh… The Baby**: Dharma and his wife whisper in bed while their baby sleeps between them. If the baby sees them talking, she wails and both say "Oh sh*t!".
+1. **Quick Scroll**: sneak your phone in bed while your wife sleeps.
+2. **Silent Baby**: Dharma and his wife whisper in bed while their baby sleeps between them. If the baby sees them talking, she wails and both say "Oh sh*t!" (shown as speech bubbles, no voice) and the baby cries.
 
 ## How to play
 Open `index.html` in a browser. No install or build step. Pick a scenario from the menu.
@@ -32,5 +32,5 @@ A scenario is an object pushed onto `Game.scenarios` with `title`, `intro`, `lev
 (`'won' | 'lost' | null`), `endT` and `progress`. Add a new file in `js/`, include it in `index.html`, and it appears in the menu. See `js/nursery.js` for an example.
 
 ## Using your own voices (optional)
-The "Oh sh*t!" lines use the browser's built-in voices, which can sound robotic. For a real voice, record two short clips
+In *Quick Scroll* the "Oh sh*t!" line uses the browser's built-in voices, which can sound robotic. For a real voice, record two short clips
 and save them as `audio/dad_ohshit.mp3` and `audio/mum_ohshit.mp3`. The game plays them automatically when they exist.

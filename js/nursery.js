@@ -18,7 +18,7 @@
 
   const S = {
     id: 'nursery',
-    title: 'Shh… The Baby',
+    title: 'Silent Baby',
     time: '11:30 PM',
     intro: 'Dharma and his wife are in bed with their baby girl asleep between them.\nThey really need to finish their talk…',
     blurb: 'Whisper with your wife without waking the baby.',
@@ -42,7 +42,7 @@
     particles = [];
     st = {
       t: 0, talk: 0, talkT: 0, mode: 'sleep', timer: rand(1.5, 2.5), willLook: true,
-      eyes: 0, wriggle: 0, wailStarted: false, mumSaid: false, hug: 0, heartT: 0, tearT: 0,
+      eyes: 0, wriggle: 0, wailStarted: false, hug: 0, heartT: 0, tearT: 0,
     };
     G.Audio.silenceAll();
   };
@@ -84,7 +84,6 @@
     S.result = 'lost'; S.endT = 0; st.mode = 'look';
     G.Audio.stopAmbient();
     G.Audio.sting();
-    G.Audio.ohShit('dad');
   }
 
   function win() {
@@ -99,7 +98,6 @@
     st.talk += (0 - st.talk) * Math.min(1, dt * 6);
     if (S.result === 'lost') {
       st.eyes = 1;
-      if (e > 0.45 && !st.mumSaid) { st.mumSaid = true; G.Audio.ohShit('mum'); }
       if (e > 0.9 && !st.wailStarted) { st.wailStarted = true; G.Audio.startBabyCry(); }
       if (e > 0.9) {
         st.tearT -= dt;

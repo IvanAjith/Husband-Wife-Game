@@ -98,21 +98,95 @@
       this.tone({ f: 620, f2: 520, dur: 0.45, type: 'triangle', vol: 0.09, vib: 10, vibRate: 9, lp: 1500 });
       this.tone({ f: 700, f2: 560, dur: 0.4, type: 'sine', vol: 0.04, delay: 0.5, vib: 8, vibRate: 9 });
     },
-    babyWail() {
-      // one long "waaaah": pitch rises then sags, wobbling voice, then a ragged breath in
-      const F = [900, 2700];
-      this.tone({ f: 420, f2: 760, dur: 0.45, type: 'sawtooth', vol: 0.9, vib: 28, vibRate: 7, formants: F });
-      this.tone({ f: 760, f2: 520, dur: 0.75, type: 'sawtooth', vol: 0.9, delay: 0.45, vib: 40, vibRate: 8, formants: F });
-      this.noise({ dur: 0.35, vol: 0.12, delay: 1.25, freq: 1800, q: 1.2 });
-      this.tone({ f: 380, f2: 560, dur: 0.3, type: 'sawtooth', vol: 0.5, delay: 1.25, vib: 30, vibRate: 12, formants: F });
+    // One cry "note": a voice source (two slightly detuned sawtooth waves, like vocal folds) whose pitch
+    // rises sharply then sags, with a wobble and random jitter, shaped by vowel-like resonances ("waaah").
+    cryNote({ dur = 1.0, f0 = 440, peak = 1.7, delay = 0, level = 1 } = {}) {
+      if (!this.ctx) return;
+      const c = this.ctx, t0 = c.currentTime + delay + 0.02;
+      const N = 64, arr = new Float32Array(N), pk = f0 * peak;
+      for (let i = 0; i < N; i++) {
+        const k = i / (N - 1);
+        const base = k < 0.22 ? f0 + (pk - f0) * Math.sin((k / 0.22) * Math.PI / 2)
+                              : pk - (pk - f0 * 1.1) * Math.pow((k - 0.22) / 0.78, 0.8);
+        const wobble = Math.sin(k * dur * 2 * Math.PI * 6.5) * pk * 0.035 * Math.min(1, k * 4);
+        arr[i] = base + wobble + (Math.random() - 0.5) * pk * 0.02;
+      }
+      const o1 = c.createOscillator(), o2 = c.createOscillator();
+      o1.type = o2.type = 'sawtooth';
+      o1.frequency.setValueCurveAtTime(arr, t0, dur);
+      o2.frequency.setValueCurveAtTime(arr.map(v => v * 1.011), t0, dur);
+      const src = c.createGain(); src.gain.value = 0.5;
+      o1.connect(src); o2.connect(src);
+
+      // vowel resonances; the mouth opens (formants rise) as the cry peaks
+      const mix = c.createGain();
+      [[800, 1150, 7, 1.0], [2300, 2800, 9, 0.55], [3700, 3900, 10, 0.28]].forEach(([fa, fb, q, gn]) => {
+        const f = c.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = q;
+        f.frequency.setValueAtTime(fa, t0); f.frequency.linearRampToValueAtTime(fb, t0 + dur * 0.3); f.frequency.linearRampToValueAtTime(fa * 1.05, t0 + dur);
+        const g = c.createGain(); g.gain.value = gn;
+        src.connect(f); f.connect(g); g.connect(mix);
+      });
+      // breathy noise through the same throat
+      const nb = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate), nd = nb.getChannelData(0);
+      for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+      const ns = c.createBufferSource(); ns.buffer = nb;
+      const nf = c.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 2400; nf.Q.value = 0.8;
+      const ng = c.createGain(); ng.gain.value = 0.12;
+      ns.connect(nf); nf.connect(ng); ng.connect(mix);
+
+      // loudness: sharp attack, trembling sustain, quick release
+      const amp = c.createGain();
+      amp.gain.setValueAtTime(0.0001, t0);
+      amp.gain.linearRampToValueAtTime(1.0 * level, t0 + 0.05);
+      amp.gain.setValueAtTime(0.85 * level, t0 + dur * 0.55);
+      amp.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+      const trem = c.createOscillator(), tg = c.createGain();
+      trem.frequency.value = 7; tg.gain.value = 0.12;
+      trem.connect(tg); tg.connect(amp.gain);
+      const comp = c.createDynamicsCompressor();
+      const out = c.createGain(); out.gain.value = 2.6;
+      mix.connect(amp); amp.connect(out); out.connect(comp); comp.connect(this._bus());
+      [o1, o2, ns, trem].forEach(n => { n.start(t0); n.stop(t0 + dur + 0.05); });
+    },
+    _bus() { // all cry sounds go through one node so stopCry() can cut them off instantly
+      if (!this._busNode) { this._busNode = this.ctx.createGain(); this._busNode.connect(this.master); }
+      return this._busNode;
+    },
+    // the shaky breath in between wails, with a little squeak
+    cryInhale(delay = 0) {
+      this.noise({ dur: 0.38, vol: 0.16, delay, freq: 1700, q: 1.1 });
+      this.tone({ f: 620, f2: 1050, dur: 0.3, type: 'sine', vol: 0.05, delay: delay + 0.04, vib: 30, vibRate: 13 });
+    },
+    babyWail() { // kept for compatibility: one wail + breath
+      this.cryNote({ dur: 1.1, f0: 450 });
+      this.cryInhale(1.2);
     },
     startBabyCry() {
       this.stopCry();
-      this.babyWail();
-      let n = 0;
-      this._cry = setInterval(() => { this.babyWail(); if (++n > 14) this.stopCry(); }, 1650);
+      if (!this.ctx) return;
+      let phrase = 0;
+      const next = () => {
+        if (this._cry === null) return;
+        let wait;
+        const f0 = 420 + Math.random() * 70;
+        if (phrase % 3 === 2) { // sobbing hiccups: ah-ah-ah
+          for (let i = 0; i < 3; i++) this.cryNote({ dur: 0.26, f0: f0 * 1.1, peak: 1.45, delay: i * 0.33, level: 0.9 });
+          this.cryInhale(1.05);
+          wait = 1.65;
+        } else {
+          const dur = 0.95 + Math.random() * 0.5;
+          this.cryNote({ dur, f0, peak: 1.5 + Math.random() * 0.35 });
+          this.cryInhale(dur + 0.08);
+          wait = dur + 0.62;
+        }
+        phrase++;
+        if (phrase > 18) return this.stopCry();
+        this._cry = setTimeout(next, wait * 1000);
+      };
+      this._cry = 0;
+      this._cry = setTimeout(next, 0);
     },
-    stopCry() { if (this._cry) { clearInterval(this._cry); this._cry = null; } },
+    stopCry() { if (this._cry !== null && this._cry !== undefined) { clearTimeout(this._cry); clearInterval(this._cry); } this._cry = null; if (this._busNode) { try { this._busNode.disconnect(); } catch (e) {} this._busNode = null; } },
     speak(text, pitch = 0.6, queue = false) {
       if (this.muted || !('speechSynthesis' in window)) return;
       try {
