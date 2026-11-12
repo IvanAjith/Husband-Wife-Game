@@ -13,8 +13,6 @@
     { name: 'The long story',      rate: 0.085, decay: 0.07, gap: [1.9, 3.6], stir: 1.0, look: 1.0, fake: 0.25 },
     { name: 'One more thing…',     rate: 0.075, decay: 0.09, gap: [1.3, 2.9], stir: 0.8, look: 0.9, fake: 0.35 },
   ];
-  const WIFE_LINES = ['Did you pay the bill?', 'Mom called today…', 'Plan for Sunday?', 'And then she said…'];
-  const HUS_LINES = ['Yes, yes…', 'Mmhm, tell me…', 'Sure, sure…', 'Really?! Shh…'];
 
   const S = {
     id: 'nursery',
@@ -173,8 +171,7 @@
 
     // ---- parents
     const talking = talkK > 0.25 && !S.result;
-    const lines = Math.floor(st.talkT / 1.1);
-    const wifeSpeaks = lines % 2 === 0;
+    const wifeSpeaks = Math.floor(st.talkT / 1.1) % 2 === 0; // they take turns; only the mouth moves
     const wf = { skin: '#f1c6a4', hair: '#5c3329', long: true, eyes: 0, mouth: 'flat', t: st.t };
     const hf = { skin: '#dfae86', hair: '#1c1a1f', eyes: 0, mouth: 'flat', t: st.t };
     if (lost) {
@@ -245,11 +242,6 @@
 
     // ---- bubbles, z's, particles
     if (!S.result && st.mode === 'sleep') zzz(c, BABY_X, BABY_Y - 40, t);
-    if (!S.result && talking) {
-      const a = clamp(talkK, 0, 1);
-      if (wifeSpeaks) whisperBubble(c, WIFE_X, HEAD_Y - 90, WIFE_LINES[(lines >> 1) % WIFE_LINES.length], a);
-      else whisperBubble(c, HUS_X, HEAD_Y - 90, HUS_LINES[(lines >> 1) % HUS_LINES.length], a);
-    }
     if (st.mode === 'stir' && !S.result) { c.fillStyle = 'rgba(255,200,230,.95)'; c.font = 'italic bold 24px system-ui'; c.fillText(st.willLook ? 'uhh…' : 'mm…', BABY_X - 24 + Math.sin(t * 9) * 3, BABY_Y - 62); }
     if (lost && e > 0.25 && e < 2.4) bubble(c, HUS_X + 20, HEAD_Y - 112, 'Oh sh*t!', HUS_X - 5, HEAD_Y - 62);
     if (lost && e > 0.4 && e < 2.4) bubble(c, WIFE_X - 20, HEAD_Y - 112, 'Oh sh*t!', WIFE_X + 5, HEAD_Y - 62);

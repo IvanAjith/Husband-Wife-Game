@@ -7,6 +7,7 @@
   const ovText = document.getElementById('ovText');
   const ovButtons = document.getElementById('ovButtons');
   const muteBtn = document.getElementById('muteBtn');
+  const menuBtn = document.getElementById('menuBtn');
 
   // crisp rendering on high-DPI screens
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -25,6 +26,7 @@
   function setOverlay(visible) {
     overlay.classList.toggle('hidden', !visible);
     overlay.inert = !visible;
+    menuBtn.hidden = visible && mode === 'menu'; // the menu button is for in-game and end screens
     if (visible) shownAt = performance.now();
     else if (document.activeElement && overlay.contains(document.activeElement)) document.activeElement.blur();
   }
@@ -77,6 +79,7 @@
   function showMenu() {
     mode = 'menu';
     holding = false;
+    G.Audio.stopAmbient();
     scene().reset(0);
     card.classList.add('wide');
     ovTitle.textContent = "Don't Get Caught 📱";
@@ -101,7 +104,7 @@
     if (s.result === 'lost') {
       showOverlay(s.loseTitle, s.loseText, [['Try again', startLevel], ['Menu', showMenu, 'secondary']]);
     } else if (lvIdx < s.levels.length - 1) {
-      showOverlay(s.winTitle, s.winText, [['Next level', () => { lvIdx++; startLevel(); }]]);
+      showOverlay(s.winTitle, s.winText, [['Next level', () => { lvIdx++; startLevel(); }], ['Menu', showMenu, 'secondary']]);
     } else {
       const btns = [['Play again', () => { lvIdx = 0; startLevel(); }]];
       if (scIdx < G.scenarios.length - 1) btns.unshift(['Next scenario', () => { scIdx++; lvIdx = 0; startLevel(); }]);
@@ -128,6 +131,9 @@
   window.addEventListener('keyup', e => {
     if (e.code === 'Space') { setHold(false); if (!overlayVisible()) e.preventDefault(); }
   });
+
+  menuBtn.onclick = () => { menuBtn.blur(); showMenu(); };
+  window.addEventListener('keydown', e => { if (e.code === 'Escape' && mode !== 'menu') showMenu(); });
 
   muteBtn.onclick = () => {
     G.Audio.init();
